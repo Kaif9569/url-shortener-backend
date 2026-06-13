@@ -410,6 +410,18 @@
         />
         <button type="submit" class="btn">Shorten</button>
       </div>
+      <!-- Custom alias (optional) -->
+<div class="alias-row">
+  <span class="alias-prefix"><%= typeof baseUrl !== 'undefined' ? baseUrl : 'snip.ly' %>/</span>
+  <input
+    type="text"
+    name="customAlias"
+    placeholder="custom-alias (optional)"
+    pattern="[a-zA-Z0-9_-]+"
+    title="Letters, numbers, hyphens and underscores only"
+    value="<%= typeof formData !== 'undefined' ? formData.customAlias || '' : '' %>"
+  />
+</div>
     </form>
 
     <!-- Result (shown after successful shortening) -->

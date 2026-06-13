@@ -1,19 +1,18 @@
 import { nanoid } from "nanoid";
 import urlModel from "../models/url.model.js";
+import validator from 'validator';
 import "dotenv/config";
-
 // 1. shortUrl(): This function generate shorturl using orginalurl and nanoid(shortcode).
 // 2. Ater generating shorturl, store it in database and also store originalurl
 export const shortenUrl = async (req, res) => {
   try {
     const port = process.env.PORT;
     const baseUrl = `http://localhost:${port}`;
-    const { originalUrl } = req.body;
+    const { originalUrl, customAlias } = req.body;
 
     const getRecentLinks = async () => {
       return urlModel.find().sort({ createdAt: -1 }).limit(10).lean();
     };
-
     const renderPage = async (overrides = {}) => {
       const links = await getRecentLinks();
 
@@ -30,19 +29,36 @@ export const shortenUrl = async (req, res) => {
         ...overrides,
       });
     };
+if (!originalUrl) {
+  return renderPage({
+    error: "Please enter a URL.",
+  });
+}
 
-    if (!originalUrl) {
-      return renderPage({
-        error: "Please enter a URL.",
-      });
+
+    const existingUrl = await urlModel
+      .findOne({ originalUrl })
+      .select("shortCode")
+      .lean();
+
+    if (existingUrl) {
+      return res.redirect(`/?shortCode=${existingUrl.shortCode}`);
     }
 
     let shortCode;
-
-    do {
-      shortCode = nanoid(6);
-    } while (await urlModel.findOne({ shortCode }));
-
+    if (customAlias) {
+      const isExist = await urlModel.exists({ shortCode: customAlias });
+      if (isExist) {
+        return renderPage({
+          error: "Custom Alias is already exist. Try another.",
+        });
+      }
+      shortCode = customAlias;
+    } else {
+      do {
+        shortCode = nanoid(6);
+      } while (await urlModel.exists({ shortCode }));
+    }
     await urlModel.create({
       shortCode,
       originalUrl,
@@ -72,7 +88,7 @@ export const redirectUrl = async (req, res) => {
     const link = await urlModel.findOneAndUpdate(
       { shortCode: req.params.code },
       { $inc: { clicks: 1 } },
-      { returnDocument: "after" }
+      { returnDocument: "after" },
     );
     if (!link) return res.status(404).send("Link not found");
     res.redirect(link.originalUrl);

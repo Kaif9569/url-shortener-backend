@@ -11,13 +11,14 @@ import urlModel from "./models/url.model.js";
 
 const app = express();
 const port = process.env.PORT;
+const MONGODB_URI = process.env.MONGODB_URI;
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 mongoose
   .connect(
-    "mongodb+srv://Mohammadkaifshaikh:GHtc5665@cluster0.hbhi6.mongodb.net/",
+    MONGODB_URI,
     {
       dbName: "url-shorterer",
     },
